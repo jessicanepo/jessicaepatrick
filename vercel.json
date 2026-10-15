@@ -1,1 +1,11 @@
-{ "cleanUrls": true, "headers": [ { "source": "/photos/(.*)", "headers": [ { "key": "Cache-Control", "value": "public, max-age=604800" } ] } ] }
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/photos/food/:file", "destination": "/parte2-guia-e-local/site-parte2/photos/food/:file" },
+    { "source": "/photos/guide/:file", "destination": "/parte2-guia-e-local/site-parte2/photos/guide/:file" },
+    { "source": "/photos/venue/:file", "destination": "/parte2-guia-e-local/site-parte2/photos/venue/:file" }
+  ],
+  "headers": [
+    { "source": "/photos/(.*)", "headers": [ { "key": "Cache-Control", "value": "public, max-age=604800" } ] }
+  ]
+}
