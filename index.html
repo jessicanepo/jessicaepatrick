@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Jessica & Patrick's wedding celebration · October 16, 2027 · Mallorca Country Club, Santa Ponsa, Mallorca. RSVP, venue, our story and a little guide to the island.">
 <meta property="og:type" content="website">
@@ -513,7 +514,13 @@ footer p{margin:6px 0 0;font-size:.8rem;letter-spacing:.2em;text-transform:upper
 .pn-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--white);border:1px solid var(--line)}
 .st{padding:20px 22px;display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--line)}
 .st:first-child{border-left:none}
-.st b{font-family:var(--display);font-weight:500;font-size:2.8rem;line-height:1;color:var(--green);font-variant-numeric:tabular-nums lining-nums}
+.st b{font-family:var(--display);font-weight:600;font-size:3.4rem;line-height:1;color:var(--green);font-variant-numeric:tabular-nums lining-nums}
+.st.yes{background:rgba(227,232,216,.55)}
+.st.yes b{font-size:4rem;color:#3E4A30}
+.pn-sync{display:inline-flex;align-items:center;gap:8px}
+.pn-sync i{width:8px;height:8px;border-radius:50%;background:var(--sage);display:inline-block}
+.pn-sync.err i{background:#B5654A}
+.btn.sending{opacity:.7;pointer-events:none}
 .st.no b{color:var(--brown)}
 .st span{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);font-weight:500;margin-top:6px}
 .st small,.st small span{font-size:.84rem;color:var(--muted);letter-spacing:0;text-transform:none;font-weight:400;margin:0}
@@ -1791,6 +1798,9 @@ const CONFIG = {
   datePT: "16 de outubro de 2027",
   deadlineEN: "October 23, 2026",
   deadlinePT: "23 de outubro de 2026",
+  /* Web app (Google Apps Script) that saves every RSVP and gives the couple's area the list.
+     Paste the "/exec" URL here. */
+  api: "https://script.google.com/macros/s/AKfycbwgkf5SelCWkcrvENsKFQZLtHsXnEJ1b8AX_89lNVADSu_aKLSBUbxQrYSaQ7wCUGLJ/exec",
   /* Google Form that collects every RSVP for the couple.
      url: the form's "viewform" link; fields: the entry.NNN id of each question; yes/no: the exact answer options. */
   form: { url: "", sheet: "", yes: "Sim", no: "Não",
@@ -1942,10 +1952,34 @@ form.addEventListener('submit',e=>{
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value.trim())){ $('f-err').textContent = pt?'Escreva um e-mail válido para receber sua confirmação.':'Enter a valid email so we can send your confirmation.'; form.email.focus(); return; }
   $('f-err').textContent='';
   buildReply();
+  sendReply(window.lastReply).then(ok=>{ if(ok) showDone(); });
+});
+function rsvpId(){
+  /* one id per visit: "edit my reply" updates the same row instead of adding a new one */
+  if(!window.__jpRid) window.__jpRid='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  return window.__jpRid;
+}
+async function sendReply(r){
+  if(!CONFIG.api) return true;
+  const pt=document.documentElement.lang==='pt', btn=form.querySelector('button[type=submit]'), old=btn.innerHTML;
+  btn.classList.add('sending'); btn.innerHTML='<span data-en>Sending…</span><span data-pt>Enviando…</span>';
+  const body={action:'rsvp', id:rsvpId(), name:r.name, country:r.country, email:r.email, yes:r.yes, party:r.party.map(g=>({name:g.name||'',child:!!g.child})), diet:r.diet, note:r.note, lang:pt?'pt':'en'};
+  let ok=false;
+  for(let tries=0; tries<2 && !ok; tries++){
+    try{
+      const res=await fetch(CONFIG.api,{method:'POST',body:JSON.stringify(body)});
+      const j=await res.json(); ok=!!(j&&j.ok);
+    }catch(e){ ok=false; }
+  }
+  btn.classList.remove('sending'); btn.innerHTML=old;
+  if(!ok) $('f-err').textContent = pt?'Não conseguimos enviar sua resposta agora. Verifique sua internet e toque em “Enviar minha resposta” de novo.':'We couldn’t send your reply just now. Check your connection and tap “Confirm my reply” again.';
+  return ok;
+}
+function showDone(){
   form.hidden=true; $('rsvp-done').hidden=false; $('rsvp-text').hidden=true;
   requestAnimationFrame(()=>$('bp').classList.add('stamped'));
   $('bp').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block:'start'});
-});
+}
 $('edit-btn').onclick=()=>{form.hidden=false;$('rsvp-done').hidden=true;$('bp').classList.remove('stamped');};
 $('copy-btn').onclick=async e=>{
   const b=e.currentTarget, lab=b.querySelector('.lab'), t=$('rsvp-text').textContent;
@@ -2260,7 +2294,7 @@ async function drawCard(){
     try{ if(!waBlob) throw 0; await navigator.clipboard.write([new ClipboardItem({'image/png':waBlob})]); toast('Image copied. Paste it into a WhatsApp chat.','Imagem copiada. Cole numa conversa do WhatsApp.'); }
     catch(e){ toast('Your browser can’t copy images. Use “Save image” instead.','Seu navegador não copia imagens. Use “Salvar imagem”.'); }
   };
-  let dl=null; (async()=>{ try{ if(window.claude&&claude.use) dl=await claude.use('downloads'); }catch(e){} if(!dl) $('wa-save').hidden=true; })();
+  let dl=null; (async()=>{ try{ if(window.claude&&claude.use) dl=await claude.use('downloads'); }catch(e){} if(!dl) dl={save:async({filename,data})=>{ const u=URL.createObjectURL(data), a=document.createElement('a'); a.href=u; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); }}; })();
   $('wa-save').onclick=async()=>{
     if(!dl||!waBlob) return;
     const name=(window.lastReply.name||'rsvp').normalize('NFD').replace(/[^\w]+/g,'-').replace(/^-|-$/g,'').toLowerCase();
@@ -2303,13 +2337,14 @@ function rowsToGuests(rows){
 function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase(); for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return 'g'+(h>>>0).toString(36); }
 
 (function(){
-  const view=$('couple'); let lastFocus=null, db=null, col=null, docs=[], filter='all', q='', unsub=null, started=false;
+  const view=$('couple'); let lastFocus=null, db=null, col=null, docs=[], filter='all', q='', unsub=null, started=false, timer=null;
   const pt=()=>document.documentElement.lang==='pt';
-  const loggedIn=()=>{ try{ return sessionStorage.getItem('jp-couple')==='1'; }catch(e){ return window.__jpCouple===true; } };
-  const setLogged=v=>{ try{ v?sessionStorage.setItem('jp-couple','1'):sessionStorage.removeItem('jp-couple'); }catch(e){} window.__jpCouple=v; };
+  const getKey=()=>{ let k=null; try{ k=sessionStorage.getItem('jp-key'); }catch(e){} return k||window.__jpKey||''; };
+  const loggedIn=()=>{ let v=false; try{ v=sessionStorage.getItem('jp-couple')==='1'; }catch(e){ v=window.__jpCouple===true; } return v && (!CONFIG.api || !!getKey()); };
+  const setLogged=(v,key)=>{ try{ if(v){ sessionStorage.setItem('jp-couple','1'); sessionStorage.setItem('jp-key',key||''); } else { sessionStorage.removeItem('jp-couple'); sessionStorage.removeItem('jp-key'); } }catch(e){} window.__jpCouple=v; window.__jpKey=v?key:''; };
 
   function open(){ lastFocus=document.activeElement; view.hidden=false; document.body.style.overflow='hidden'; requestAnimationFrame(()=>view.classList.add('show')); show(); }
-  function close(){ view.classList.remove('show'); document.body.style.overflow=''; setTimeout(()=>{view.hidden=true; if(lastFocus) lastFocus.focus();}, matchMedia('(prefers-reduced-motion: reduce)').matches?0:450); }
+  function close(){ clearInterval(timer); started=false; view.classList.remove('show'); document.body.style.overflow=''; setTimeout(()=>{view.hidden=true; if(lastFocus) lastFocus.focus();}, matchMedia('(prefers-reduced-motion: reduce)').matches?0:450); }
   function show(){
     const ok=loggedIn();
     $('cp-login').hidden=ok; $('cp-panel').hidden=!ok; $('cp-logout').hidden=!ok;
@@ -2318,7 +2353,7 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
   }
   $('couple-btn').onclick=open;
   $('cp-close').onclick=close;
-  $('cp-logout').onclick=()=>{ setLogged(false); show(); };
+  $('cp-logout').onclick=()=>{ setLogged(false); started=false; clearInterval(timer); show(); };
   document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !view.hidden) close(); });
 
   $('login-form').addEventListener('submit',async e=>{
@@ -2326,7 +2361,7 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
     const u=$('lg-user').value.trim().toLowerCase(), p=$('lg-pass').value;
     let ok=false;
     try{ ok=(await sha256(u))===COUPLE_LOGIN.user && (await sha256(p))===COUPLE_LOGIN.pass; }catch(_){}
-    if(ok){ $('lg-err').textContent=''; $('lg-pass').value=''; setLogged(true); show(); }
+    if(ok){ $('lg-err').textContent=''; $('lg-pass').value=''; setLogged(true,p); show(); }
     else{
       $('lg-err').textContent=pt()?'Usuário ou senha incorretos.':'Wrong username or password.';
       const c=$('login-form'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
@@ -2340,6 +2375,7 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
   async function startData(){
     render();
     if(started) return; started=true;
+    if(CONFIG.api){ fetchList(); clearInterval(timer); timer=setInterval(fetchList,45000); return; }
     if(!window.claude || !claude.use){ noStore(); return; }
     const user=await claude.use('user');
     let canEdit=false; try{ canEdit=user?await user.canEdit():false; }catch(e){}
@@ -2348,9 +2384,24 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
     col=db.collection('rsvps');
     unsub=col.onSnapshot(snap=>{ docs=snap.docs.map(s=>({id:s.id,...s.data()})); render(); }, ()=>{});
   }
+  async function fetchList(){
+    const P=pt(), up=$('cp-updated');
+    if(!docs.length){ up.innerHTML='<span class="pn-sync"><i></i>'+(P?'Carregando respostas…':'Loading replies…')+'</span>'; up.querySelector('.pn-sync').classList.remove('err'); }
+    try{
+      const res=await fetch(CONFIG.api+(CONFIG.api.includes('?')?'&':'?')+'action=list&key='+encodeURIComponent(getKey())+'&t='+Date.now());
+      const j=await res.json();
+      if(!j.ok){ if(j.error==='senha'){ setLogged(false); started=false; clearInterval(timer); show(); $('lg-err').textContent=P?'A senha da planilha não confere. Entre de novo.':'Password not accepted. Please sign in again.'; return; } throw new Error(j.error); }
+      docs=(j.guests||[]).map(g=>({...g, people:g.yes?(g.people||1+(g.party||[]).length):0}));
+      if(j.sheet){ $('cp-sheet').href=j.sheet; $('cp-sheet').hidden=false; }
+      const t=new Date().toLocaleTimeString(P?'pt-BR':'en-US',{hour:'2-digit',minute:'2-digit'});
+      up.innerHTML='<span class="pn-sync"><i></i>'+(P?`${docs.length} resposta${docs.length===1?'':'s'} · atualizado às ${t}`:`${docs.length} repl${docs.length===1?'y':'ies'} · updated at ${t}`)+'</span>';
+      render();
+    }catch(e){
+      up.innerHTML='<span class="pn-sync err"><i></i>'+(P?'Não foi possível carregar as respostas agora. Tentando de novo em instantes…':'Couldn’t load replies right now. Retrying shortly…')+'</span>';
+    }
+  }
   function noStore(){
-    $('pn-empty-title').innerHTML='<span data-en>Open the list in Google Sheets</span><span data-pt>Abra a lista no Google Planilhas</span>';
-    $('pn-empty-text').innerHTML='<span data-en>Saved guest lists only load when the site is opened from the couple’s Claude account. Your Google Sheet always has every reply.</span><span data-pt>A lista salva só aparece quando o site é aberto pela conta Claude dos noivos. A planilha do Google sempre tem todas as respostas.</span>';
+    /* no list source here: keep the friendly empty state */
   }
 
   function render(){
@@ -2471,7 +2522,7 @@ async function guestListPDF(docs, pt){
 }
 (function(){
   let dl=null;
-  (async()=>{ try{ if(window.claude&&claude.use) dl=await claude.use('downloads'); }catch(e){} if(!dl) $('cp-pdf').hidden=true; })();
+  (async()=>{ try{ if(window.claude&&claude.use) dl=await claude.use('downloads'); }catch(e){} if(!dl) dl={save:async({filename,data})=>{ const u=URL.createObjectURL(data), a=document.createElement('a'); a.href=u; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); }}; })();
   $('cp-pdf').onclick=async()=>{
     const pt=document.documentElement.lang==='pt', b=$('cp-pdf');
     if(!window.jspdf){ $('cp-msg').textContent=pt?'O gerador de PDF não carregou. Recarregue a página.':'The PDF tool didn’t load. Reload the page.'; $('cp-msg').hidden=false; return; }
