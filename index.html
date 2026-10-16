@@ -125,6 +125,8 @@ nav.open .menu-btn i::after{transform:translateY(-5px) rotate(-45deg)}
 .postmark{position:absolute;right:17%;top:7%;width:120px;opacity:.55;transform:rotate(-12deg)}
 .postcard{position:absolute;left:0;right:6%;top:30%;background:var(--white);padding:10px;box-shadow:0 24px 44px -20px rgba(47,53,39,.6);transform:rotate(2.5deg);animation:slideF 1.7s .55s cubic-bezier(.2,.8,.2,1) both}
 .postcard .frame{position:relative;overflow:hidden}
+.postcard .pc-photo{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover}
+.postcard .ov .ghost{text-shadow:0 1px 12px rgba(60,50,40,.35)}
 .postcard .ov{position:absolute;inset:0;padding:5% 6%;display:flex;flex-direction:column;justify-content:space-between;color:var(--white);pointer-events:none}
 .postcard .ov .ghost{font-family:var(--display);font-size:clamp(1.4rem,3.6vw,2.4rem);line-height:.95;opacity:.75;letter-spacing:.05em;font-weight:500}
 .postcard .ov .names{font-family:var(--display);font-size:clamp(1.3rem,3vw,2rem);line-height:1;text-shadow:0 1px 10px rgba(30,50,60,.35)}
@@ -539,7 +541,39 @@ footer p{margin:6px 0 0;font-size:.8rem;letter-spacing:.2em;text-transform:upper
 .pn-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px}
 .pn-hint{font-size:.88rem;color:var(--muted);margin:0}
 
-.pn-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:28px;align-items:start}
+.pn-grid{display:grid;grid-template-columns:1fr;gap:34px;align-items:start}
+.gt-wrap{background:var(--white);border:1px solid var(--line);overflow:hidden}
+.gt{width:100%;border-collapse:collapse;font-size:.95rem}
+.gt th{text-align:left;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brown);font-weight:500;padding:14px 16px;background:rgba(234,223,203,.45);border-bottom:1px solid var(--line);white-space:nowrap}
+.gt td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink);line-height:1.45;word-break:break-word}
+.gt tbody tr:nth-child(even) td{background:rgba(245,240,230,.55)}
+.gt tbody tr:last-child td{border-bottom:none}
+.gt .c-n{width:64px;text-align:center}
+.gt .num{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 8px;border-radius:999px;background:rgba(147,162,122,.2);color:var(--green);font-family:var(--display);font-size:1.25rem;font-weight:600}
+.gt tr.no .num{background:rgba(201,174,134,.25);color:var(--brown)}
+.gt .gname{font-family:var(--display);font-size:1.22rem;font-weight:600;color:var(--green);line-height:1.2}
+.gt .comp{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.gt .kid{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:rgba(79,122,143,.14);color:var(--ocean-deep);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;vertical-align:1px}
+.gt .dash{color:var(--muted);opacity:.6}
+.gt .chip{font-size:.64rem;padding:5px 10px;white-space:nowrap}
+.gt tfoot td{background:rgba(227,232,216,.55);font-weight:500;color:var(--green);border-top:1px solid var(--line);border-bottom:none}
+.gt-hint td{text-align:center;color:var(--muted);font-style:italic;padding:22px}
+@media (max-width:760px){
+  .gt thead{display:none}
+  .gt,.gt tbody,.gt tr,.gt td,.gt tfoot{display:block;width:100%}
+  .gt tbody tr{padding:14px 16px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center}
+  .gt tbody tr td{border:none;padding:0;background:none!important}
+  .gt tbody tr:nth-child(even){background:rgba(245,240,230,.55)}
+  .gt td.c-n{width:auto;grid-row:1}
+  .gt td.c-name{grid-row:1}
+  .gt td.c-st{grid-row:1}
+  .gt td.c-x{grid-column:1/-1;font-size:.9rem}
+  .gt td.c-x::before{content:attr(data-l);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brown);margin-top:6px}
+  .gt td.c-x.empty{display:none}
+  .gt tfoot td{padding:12px 16px}
+}
+#pn-notes{columns:2 320px;column-gap:16px}
+#pn-notes .nt{break-inside:avoid;margin-bottom:14px}
 @media (max-width:900px){.pn-grid{grid-template-columns:1fr}}
 .pn-tools{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
 .seg{display:flex;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--white)}
@@ -1765,7 +1799,11 @@ html[lang="pt"] [data-pt]{display:revert}
             </div>
             <input type="search" id="pn-search" aria-label="Search guests" placeholder="Search guests">
           </div>
-          <ul class="pn-list" id="pn-list"></ul>
+          <div class="gt-wrap" id="gt-wrap"><table class="gt">
+            <thead><tr><th class="c-n"><span data-en>Guests</span><span data-pt>Pessoas</span></th><th><span data-en>Name</span><span data-pt>Nome</span></th><th><span data-en>Companions</span><span data-pt>Acompanhantes</span></th><th><span data-en>Country</span><span data-pt>País</span></th><th><span data-en>Dietary</span><span data-pt>Restrições</span></th><th><span data-en>Reply</span><span data-pt>Resposta</span></th></tr></thead>
+            <tbody id="pn-list"></tbody>
+            <tfoot id="pn-foot"></tfoot>
+          </table></div>
           <div class="pn-empty" id="pn-empty">
             <svg viewBox="0 0 64 48" aria-hidden="true"><rect x="4" y="6" width="56" height="36" rx="3"/><path d="M6 9l26 18L58 9"/></svg>
             <b id="pn-empty-title"><span data-en>No replies yet</span><span data-pt>Nenhuma resposta ainda</span></b>
@@ -2418,21 +2456,28 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
     $('bar-yes').style.width=(docs.length?yes.length/tot*100:0)+'%'; $('bar-no').style.width=(docs.length?no.length/tot*100:0)+'%';
     const list=$('pn-list'); list.innerHTML='';
     const shown=docs.filter(d=>(filter==='all'||(filter==='yes')===!!d.yes) && (!q || JSON.stringify([d.name,d.country,(d.party||[]).map(g=>g.name)]).toLowerCase().includes(q)))
-      .sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+      .sort((a,b)=>(b.yes-a.yes)||(a.name||'').localeCompare(b.name||''));
+    const T=P?{comp:'Acompanhantes',country:'País',diet:'Restrições',kid:'criança',acc:'Aceitou',dec:'Recusou'}:{comp:'Companions',country:'Country',diet:'Dietary',kid:'child',acc:'Accepted',dec:'Declined'};
+    const cell=(cls,label,html,empty)=>{ const td=document.createElement('td'); td.className=cls+(empty?' empty':''); td.dataset.l=label; td.innerHTML=empty?'<span class="dash">—</span>':html; return td; };
+    const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     shown.forEach(d=>{
-      const li=document.createElement('li'); li.className='gr'+(d.yes?'':' no');
+      const tr=document.createElement('tr'); if(!d.yes) tr.className='no';
       const n=d.yes?(d.people||1+(d.party||[]).length):0;
-      li.innerHTML=`<span class="pax">${d.yes?n:'–'}</span><div><div class="nm"></div><div class="meta"></div></div><div class="side"><span class="chip ${d.yes?'':'no'}">${d.yes?(P?'Aceitou':'Accepted'):(P?'Recusou':'Declined')}</span></div>`;
-      li.querySelector('.nm').textContent=d.name;
-      const bits=[];
-      if((d.party||[]).length) bits.push((P?'Com ':'With ')+d.party.map(g=>g.name+(g.child?(P?' (criança)':' (child)'):'')).join(', '));
-      if(d.country) bits.push(d.country);
-      if(d.diet) bits.push((P?'Restrições: ':'Dietary: ')+d.diet);
-      const meta=li.querySelector('.meta'); if(bits.length) meta.textContent=bits.join(' · '); else meta.remove();
-      list.appendChild(li);
+      const party=(d.party||[]).filter(g=>g.name);
+      tr.append(
+        cell('c-n','', `<span class="num">${d.yes?n:'–'}</span>`),
+        cell('c-name','', `<div class="gname">${esc(d.name)}</div>`),
+        cell('c-x',T.comp, `<ul class="comp">${party.map(g=>`<li>${esc(g.name)}${g.child?`<span class="kid">${T.kid}</span>`:''}</li>`).join('')}</ul>`, !d.yes||!party.length),
+        cell('c-x',T.country, esc(d.country||''), !d.country),
+        cell('c-x',T.diet, esc(d.diet||''), !d.yes||!d.diet),
+        cell('c-st','', `<span class="chip ${d.yes?'':'no'}">${d.yes?T.acc:T.dec}</span>`)
+      );
+      list.appendChild(tr);
     });
-    $('pn-empty').hidden=docs.length>0;
-    if(docs.length && !shown.length){ const li=document.createElement('li'); li.className='pn-hint'; li.textContent=P?'Nenhum convidado neste filtro.':'No guests match this filter.'; list.appendChild(li); }
+    $('pn-empty').hidden=docs.length>0; $('gt-wrap').hidden=!docs.length;
+    if(docs.length && !shown.length){ const tr=document.createElement('tr'); tr.className='gt-hint'; tr.innerHTML=`<td colspan="6">${P?'Nenhum convidado neste filtro.':'No guests match this filter.'}</td>`; list.appendChild(tr); }
+    const shownPeople=shown.reduce((a,d)=>a+(d.yes?(d.people||1+(d.party||[]).length):0),0);
+    $('pn-foot').innerHTML=shown.length?`<tr><td colspan="6">${P?`${shown.length} resposta${shown.length===1?'':'s'} · ${shownPeople} pessoa${shownPeople===1?'':'s'} confirmada${shownPeople===1?'':'s'}`:`${shown.length} repl${shown.length===1?'y':'ies'} · ${shownPeople} guest${shownPeople===1?'':'s'} attending`}</td></tr>`:'';
     const nb=$('pn-notes'); nb.innerHTML='';
     notes.forEach(d=>{ const f=document.createElement('figure'); f.className='nt'; f.innerHTML='<p></p><cite></cite>'; f.querySelector('p').textContent='“'+d.note+'”'; f.querySelector('cite').textContent=d.name; nb.appendChild(f); });
     $('pn-notes-empty').hidden=notes.length>0;
@@ -2443,7 +2488,9 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
 })();
 
 /* ================= Guest list PDF ================= */
+function pdfSafe(t){ return String(t==null?'':t).replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,'-').replace(/…/g,'...').replace(/[^\x20-\x7E\xA0-\xFF]/g,'').replace(/\s+/g,' ').trim(); }
 async function guestListPDF(docs, pt){
+  docs=docs.map(x=>({...x, name:pdfSafe(x.name), country:pdfSafe(x.country), diet:pdfSafe(x.diet), party:(x.party||[]).map(g=>({...g,name:pdfSafe(g.name)}))}));
   const { jsPDF } = window.jspdf;
   const d=new jsPDF({unit:'pt',format:'a4'});
   const W=d.internal.pageSize.getWidth(), H=d.internal.pageSize.getHeight(), M=48;
@@ -2502,7 +2549,7 @@ async function guestListPDF(docs, pt){
   table(T.accH,yes,green,true);
   table(T.decH,no,brown,false);
 
-  const notes=docs.filter(x=>x.note);
+  const notes=[];
   if(notes.length){
     need(60);
     d.setFont('times','italic'); d.setFontSize(18); d.setTextColor(...ocean); d.text(T.msgs,M,y); y+=12;
