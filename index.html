@@ -558,6 +558,20 @@ footer p{margin:6px 0 0;font-size:.8rem;letter-spacing:.2em;text-transform:upper
 .gt .chip{font-size:.64rem;padding:5px 10px;white-space:nowrap}
 .gt tfoot td{background:rgba(227,232,216,.55);font-weight:500;color:var(--green);border-top:1px solid var(--line);border-bottom:none}
 .gt-hint td{text-align:center;color:var(--muted);font-style:italic;padding:22px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.gt .c-del{width:48px;text-align:right;white-space:nowrap}
+.gt .del{all:unset;cursor:pointer;width:34px;height:34px;border-radius:50%;display:inline-grid;place-items:center;color:var(--muted);transition:background .3s,color .3s}
+.gt .del svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.gt .del:hover,.gt .del:focus-visible{background:rgba(181,101,74,.12);color:#9C4F36}
+.gt .del:focus-visible{outline:2px solid var(--ocean-deep)}
+.gt .dup{display:inline-block;margin-top:5px;padding:2px 9px;border-radius:999px;background:rgba(214,170,80,.22);color:#7A5A1E;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase}
+.gt tr.confirm td{background:rgba(181,101,74,.08)!important}
+.gt .ask{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.gt .ask span{font-size:.88rem;color:#7A3E2B;margin-right:4px}
+.gt .ask button{all:unset;cursor:pointer;padding:7px 14px;border-radius:999px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;font-weight:500;border:1px solid var(--line);background:var(--white);color:var(--ink)}
+.gt .ask button.yes{background:#9C4F36;border-color:#9C4F36;color:#fff}
+.gt .ask button:focus-visible{outline:2px solid var(--ocean-deep)}
+.gt .ask button[disabled]{opacity:.6;pointer-events:none}
 @media (max-width:760px){
   .gt thead{display:none}
   .gt,.gt tbody,.gt tr,.gt td,.gt tfoot{display:block;width:100%}
@@ -567,6 +581,9 @@ footer p{margin:6px 0 0;font-size:.8rem;letter-spacing:.2em;text-transform:upper
   .gt td.c-n{width:auto;grid-row:1}
   .gt td.c-name{grid-row:1}
   .gt td.c-st{grid-row:1}
+  .gt tbody tr{grid-template-columns:auto 1fr auto auto}
+  .gt td.c-del{grid-row:1;width:auto}
+  .gt tr.confirm td.c-ask{grid-column:1/-1}
   .gt td.c-x{grid-column:1/-1;font-size:.9rem}
   .gt td.c-x::before{content:attr(data-l);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brown);margin-top:6px}
   .gt td.c-x.empty{display:none}
@@ -1800,7 +1817,7 @@ html[lang="pt"] [data-pt]{display:revert}
             <input type="search" id="pn-search" aria-label="Search guests" placeholder="Search guests">
           </div>
           <div class="gt-wrap" id="gt-wrap"><table class="gt">
-            <thead><tr><th class="c-n"><span data-en>Guests</span><span data-pt>Pessoas</span></th><th><span data-en>Name</span><span data-pt>Nome</span></th><th><span data-en>Companions</span><span data-pt>Acompanhantes</span></th><th><span data-en>Country</span><span data-pt>País</span></th><th><span data-en>Dietary</span><span data-pt>Restrições</span></th><th><span data-en>Reply</span><span data-pt>Resposta</span></th></tr></thead>
+            <thead><tr><th class="c-n"><span data-en>Guests</span><span data-pt>Pessoas</span></th><th><span data-en>Name</span><span data-pt>Nome</span></th><th><span data-en>Companions</span><span data-pt>Acompanhantes</span></th><th><span data-en>Country</span><span data-pt>País</span></th><th><span data-en>Dietary</span><span data-pt>Restrições</span></th><th><span data-en>Reply</span><span data-pt>Resposta</span></th><th class="c-del"><span class="sr"><span data-en>Remove</span><span data-pt>Excluir</span></span></th></tr></thead>
             <tbody id="pn-list"></tbody>
             <tfoot id="pn-foot"></tfoot>
           </table></div>
@@ -2433,7 +2450,7 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
       if(j.sheet){ $('cp-sheet').href=j.sheet; $('cp-sheet').hidden=false; }
       const t=new Date().toLocaleTimeString(P?'pt-BR':'en-US',{hour:'2-digit',minute:'2-digit'});
       up.innerHTML='<span class="pn-sync"><i></i>'+(P?`${docs.length} resposta${docs.length===1?'':'s'} · atualizado às ${t}`:`${docs.length} repl${docs.length===1?'y':'ies'} · updated at ${t}`)+'</span>';
-      render();
+      if(!document.querySelector('#pn-list tr.confirm')) render();
     }catch(e){
       up.innerHTML='<span class="pn-sync err"><i></i>'+(P?'Não foi possível carregar as respostas agora. Tentando de novo em instantes…':'Couldn’t load replies right now. Retrying shortly…')+'</span>';
     }
@@ -2442,6 +2459,31 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
     /* no list source here: keep the friendly empty state */
   }
 
+  function askDelete(tr,d,DEL){
+    const prev=[...tr.children];
+    tr.classList.add('confirm'); tr.innerHTML='';
+    const td=document.createElement('td'); td.colSpan=7; td.className='c-ask';
+    td.innerHTML=`<div class="ask"><span></span><button type="button" class="no">${DEL.no}</button><button type="button" class="yes">${DEL.yes}</button></div>`;
+    td.querySelector('span').textContent=`${DEL.ask} ${String(d.name||'').trim()}?`;
+    tr.appendChild(td);
+    const cancel=()=>{ tr.classList.remove('confirm'); tr.innerHTML=''; prev.forEach(c=>tr.appendChild(c)); tr.querySelector('.del')&&tr.querySelector('.del').focus(); };
+    td.querySelector('.no').onclick=cancel;
+    td.querySelector('.yes').onclick=async e=>{
+      const P=pt(); const btns=td.querySelectorAll('button'); btns.forEach(b=>b.disabled=true);
+      e.currentTarget.textContent=P?'Excluindo…':'Removing…';
+      try{
+        const res=await fetch(CONFIG.api,{method:'POST',body:JSON.stringify({action:'delete',key:getKey(),id:d.id})});
+        const j=await res.json();
+        if(!j.ok && j.error!=='nao-encontrado') throw new Error(j.error||'x');
+        docs=docs.filter(x=>x.id!==d.id); render(); msg('');
+        fetchList();
+      }catch(err){
+        cancel();
+        msg(P?'Não foi possível excluir agora. Verifique se o script do Google foi atualizado e tente de novo.':'Couldn’t remove it right now. Please try again.');
+      }
+    };
+    td.querySelector('.no').focus();
+  }
   function render(){
     const P=pt();
     window.couplesDocs=docs; $('cp-pdf').disabled=!docs.length;
@@ -2460,24 +2502,32 @@ function docIdFor(x){ let h=0; const s=(x.receivedAt||'')+'|'+x.name.toLowerCase
     const T=P?{comp:'Acompanhantes',country:'País',diet:'Restrições',kid:'criança',acc:'Aceitou',dec:'Recusou'}:{comp:'Companions',country:'Country',diet:'Dietary',kid:'child',acc:'Accepted',dec:'Declined'};
     const cell=(cls,label,html,empty)=>{ const td=document.createElement('td'); td.className=cls+(empty?' empty':''); td.dataset.l=label; td.innerHTML=empty?'<span class="dash">—</span>':html; return td; };
     const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const norm=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+    const seen={}; docs.forEach(d=>{ const k=norm(d.name); seen[k]=(seen[k]||0)+1; });
+    const DEL=P?{ask:'Excluir a resposta de',no:'Cancelar',yes:'Excluir',dup:'Possível duplicado',lab:'Excluir'}:{ask:'Remove the reply from',no:'Cancel',yes:'Remove',dup:'Possible duplicate',lab:'Remove'};
     shown.forEach(d=>{
       const tr=document.createElement('tr'); if(!d.yes) tr.className='no';
       const n=d.yes?(d.people||1+(d.party||[]).length):0;
       const party=(d.party||[]).filter(g=>g.name);
       tr.append(
         cell('c-n','', `<span class="num">${d.yes?n:'–'}</span>`),
-        cell('c-name','', `<div class="gname">${esc(d.name)}</div>`),
+        cell('c-name','', `<div class="gname">${esc(d.name)}</div>${seen[norm(d.name)]>1?`<span class="dup">${DEL.dup}</span>`:''}`),
         cell('c-x',T.comp, `<ul class="comp">${party.map(g=>`<li>${esc(g.name)}${g.child?`<span class="kid">${T.kid}</span>`:''}</li>`).join('')}</ul>`, !d.yes||!party.length),
         cell('c-x',T.country, esc(d.country||''), !d.country),
         cell('c-x',T.diet, esc(d.diet||''), !d.yes||!d.diet),
         cell('c-st','', `<span class="chip ${d.yes?'':'no'}">${d.yes?T.acc:T.dec}</span>`)
       );
+      if(CONFIG.api && d.id){
+        const td=cell('c-del','', `<button type="button" class="del" title="${DEL.lab}" aria-label="${DEL.lab} ${esc(d.name)}"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>`);
+        td.querySelector('.del').onclick=()=>askDelete(tr,d,DEL);
+        tr.appendChild(td);
+      } else tr.appendChild(cell('c-del','',''));
       list.appendChild(tr);
     });
     $('pn-empty').hidden=docs.length>0; $('gt-wrap').hidden=!docs.length;
-    if(docs.length && !shown.length){ const tr=document.createElement('tr'); tr.className='gt-hint'; tr.innerHTML=`<td colspan="6">${P?'Nenhum convidado neste filtro.':'No guests match this filter.'}</td>`; list.appendChild(tr); }
+    if(docs.length && !shown.length){ const tr=document.createElement('tr'); tr.className='gt-hint'; tr.innerHTML=`<td colspan="7">${P?'Nenhum convidado neste filtro.':'No guests match this filter.'}</td>`; list.appendChild(tr); }
     const shownPeople=shown.reduce((a,d)=>a+(d.yes?(d.people||1+(d.party||[]).length):0),0);
-    $('pn-foot').innerHTML=shown.length?`<tr><td colspan="6">${P?`${shown.length} resposta${shown.length===1?'':'s'} · ${shownPeople} pessoa${shownPeople===1?'':'s'} confirmada${shownPeople===1?'':'s'}`:`${shown.length} repl${shown.length===1?'y':'ies'} · ${shownPeople} guest${shownPeople===1?'':'s'} attending`}</td></tr>`:'';
+    $('pn-foot').innerHTML=shown.length?`<tr><td colspan="7">${P?`${shown.length} resposta${shown.length===1?'':'s'} · ${shownPeople} pessoa${shownPeople===1?'':'s'} confirmada${shownPeople===1?'':'s'}`:`${shown.length} repl${shown.length===1?'y':'ies'} · ${shownPeople} guest${shownPeople===1?'':'s'} attending`}</td></tr>`:'';
     const nb=$('pn-notes'); nb.innerHTML='';
     notes.forEach(d=>{ const f=document.createElement('figure'); f.className='nt'; f.innerHTML='<p></p><cite></cite>'; f.querySelector('p').textContent='“'+d.note+'”'; f.querySelector('cite').textContent=d.name; nb.appendChild(f); });
     $('pn-notes-empty').hidden=notes.length>0;
